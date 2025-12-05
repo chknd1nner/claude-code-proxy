@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 const Logger = require('./Logger');
+const OAuthManager = require('./OAuthManager');
 
 const STRIP_TTL = true;
 const TOKEN_REFRESH_METHOD = 'OAUTH'; // 'OAUTH' or 'CLAUDE_CODE_CLI'
@@ -37,6 +38,7 @@ const loadConfig = () => {
 
 const CONFIG = loadConfig();
 const FILTER_SAMPLING_PARAMS = CONFIG.filter_sampling_params === true; // Default to false
+const FALLBACK_TO_CLAUDE_CODE = CONFIG.fallback_to_claude_code !== 'false'; // Default to true
 
 class ClaudeRequest {
   static cachedToken = null;
@@ -150,18 +152,39 @@ class ClaudeRequest {
 
   async loadOrRefreshToken() {
     try {
+      // Try OAuthManager's stored tokens first
+      if (OAuthManager.isAuthenticated()) {
+        Logger.debug('Using OAuthManager tokens');
+        const token = await OAuthManager.getValidAccessToken();
+        return `Bearer ${token}`;
+      }
+
+      // Fallback to Claude Code credentials if enabled
+      if (FALLBACK_TO_CLAUDE_CODE) {
+        Logger.debug('Falling back to Claude Code credentials');
+        return await this.loadFromClaudeCodeCredentials();
+      }
+
+      throw new Error('No authentication tokens found. Please authenticate first.');
+    } catch (error) {
+      throw new Error(`Failed to get auth token: ${error.message}`);
+    }
+  }
+
+  async loadFromClaudeCodeCredentials() {
+    try {
       const credentialsData = this.loadCredentialsFromFile();
       const credentials = JSON.parse(credentialsData);
       const oauth = credentials.claudeAiOauth;
-      
+
       if (oauth.expiresAt && Date.now() >= (oauth.expiresAt - 10000)) {
-        Logger.info('Token expired/expiring, refreshing...');
+        Logger.info('Claude Code token expired/expiring, refreshing...');
         return await this.refreshToken();
       }
 
       return `Bearer ${oauth.accessToken}`;
     } catch (error) {
-      throw new Error(`Failed to get auth token: ${error.message}`);
+      throw new Error(`Failed to load Claude Code credentials: ${error.message}`);
     }
   }
 
