@@ -131,6 +131,11 @@ async function handleRequest(req, res) {
 
   // OAuth Routes
   if (pathname === '/auth/login' && req.method === 'GET') {
+    serveStaticFile(res, 'login.html', 'text/html');
+    return;
+  }
+
+  if (pathname === '/auth/get-url' && req.method === 'GET') {
     try {
       const pkce = OAuthManager.generatePKCE();
       pkceStates.set(pkce.state, {
@@ -140,13 +145,13 @@ async function handleRequest(req, res) {
 
       const authUrl = OAuthManager.buildAuthorizationURL(pkce);
 
-      res.writeHead(302, { 'Location': authUrl });
-      res.end();
-      Logger.info('Redirecting to OAuth authorization URL');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ url: authUrl, state: pkce.state }));
+      Logger.info('Generated OAuth authorization URL');
     } catch (error) {
-      Logger.error('OAuth login error:', error.message);
+      Logger.error('OAuth get-url error:', error.message);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Failed to initiate OAuth login' }));
+      res.end(JSON.stringify({ error: 'Failed to generate OAuth URL' }));
     }
     return;
   }
@@ -154,8 +159,18 @@ async function handleRequest(req, res) {
   if (pathname === '/auth/callback' && req.method === 'GET') {
     try {
       const query = parsedUrl.query;
-      const code = query.code;
-      const state = query.state;
+      let code = query.code;
+      let state = query.state;
+
+      // Handle manual code entry format: "code#state"
+      if (query.manual_code) {
+        const parts = query.manual_code.split('#');
+        if (parts.length !== 2) {
+          throw new Error('Invalid code format. Expected: code#state');
+        }
+        code = parts[0];
+        state = parts[1];
+      }
 
       if (!code || !state) {
         throw new Error('Missing authorization code or state');
@@ -163,7 +178,7 @@ async function handleRequest(req, res) {
 
       const pkceData = pkceStates.get(state);
       if (!pkceData) {
-        throw new Error('Invalid or expired state parameter');
+        throw new Error('Invalid or expired state parameter. Please start the authorization process again.');
       }
 
       pkceStates.delete(state);
@@ -273,10 +288,6 @@ function startServer() {
 
   server.listen(port, host, () => {
     Logger.info(`claude-code-proxy server listening on ${host}:${port}`);
-
-    // Set the redirect URI for OAuth
-    const redirectUri = `http://localhost:${port}/auth/callback`;
-    OAuthManager.setRedirectURI(redirectUri);
 
     // Display authentication status
     const isAuthenticated = OAuthManager.isAuthenticated();

@@ -8,7 +8,7 @@ const OAUTH_CONFIG = {
   client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
   authorize_url: 'https://claude.ai/oauth/authorize',
   token_url: 'https://console.anthropic.com/v1/oauth/token',
-  redirect_uri: null, // Will be set dynamically based on server host/port
+  redirect_uri: 'https://console.anthropic.com/oauth/code/callback', // Anthropic's callback page (shows code to user)
   scope: 'org:create_api_key user:profile user:inference'
 };
 
@@ -294,13 +294,6 @@ class OAuthManager {
     }
   }
 
-  /**
-   * Set the redirect URI (called by server on startup)
-   * @param {string} uri - Redirect URI
-   */
-  setRedirectURI(uri) {
-    OAUTH_CONFIG.redirect_uri = uri;
-  }
 }
 
 // Export singleton instance
