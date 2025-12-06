@@ -183,7 +183,7 @@ async function handleRequest(req, res) {
 
       pkceStates.delete(state);
 
-      const tokens = await OAuthManager.exchangeCodeForTokens(code, pkceData.code_verifier);
+      const tokens = await OAuthManager.exchangeCodeForTokens(code, pkceData.code_verifier, state);
 
       const tokenData = {
         access_token: tokens.access_token,

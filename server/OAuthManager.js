@@ -37,8 +37,8 @@ class OAuthManager {
       .update(code_verifier)
       .digest('base64url');
 
-    // Generate random state for CSRF protection
-    const state = crypto.randomBytes(16).toString('base64url');
+    // Generate random state for CSRF protection (32 bytes to match OpenCode)
+    const state = crypto.randomBytes(32).toString('base64url');
 
     return { code_verifier, code_challenge, state };
   }
@@ -50,6 +50,7 @@ class OAuthManager {
    */
   buildAuthorizationURL(pkce) {
     const params = new URLSearchParams({
+      code: 'true', // Required: tells Anthropic to display the authorization code
       client_id: OAUTH_CONFIG.client_id,
       response_type: 'code',
       redirect_uri: OAUTH_CONFIG.redirect_uri,
@@ -66,12 +67,14 @@ class OAuthManager {
    * Exchange authorization code for access and refresh tokens
    * @param {string} code - Authorization code from callback
    * @param {string} code_verifier - PKCE code verifier
+   * @param {string} state - State parameter from callback
    * @returns {Promise<{access_token: string, refresh_token: string, expires_in: number}>}
    */
-  async exchangeCodeForTokens(code, code_verifier) {
+  async exchangeCodeForTokens(code, code_verifier, state) {
     const payload = JSON.stringify({
       grant_type: 'authorization_code',
       code: code,
+      state: state,
       client_id: OAUTH_CONFIG.client_id,
       code_verifier: code_verifier,
       redirect_uri: OAUTH_CONFIG.redirect_uri
