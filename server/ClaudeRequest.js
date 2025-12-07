@@ -190,8 +190,15 @@ class ClaudeRequest {
 
   loadCredentialsFromFile() {
     if (process.platform === 'win32') {
+      // Try native Windows location first
+      const nativePath = path.join(os.homedir(), '.claude', '.credentials.json');
+      if (fs.existsSync(nativePath)) {
+        return fs.readFileSync(nativePath, 'utf8');
+      }
+      // Fallback to WSL for users who still have the old setup
       return execSync('wsl cat ~/.claude/.credentials.json', { encoding: 'utf8', timeout: 10000 });
     } else {
+      // macOS/Linux use the same path convention
       const credentialsPath = path.join(os.homedir(), '.claude', '.credentials.json');
       return fs.readFileSync(credentialsPath, 'utf8');
     }
@@ -199,7 +206,13 @@ class ClaudeRequest {
 
   writeCredentialsToFile(credentialsJson) {
     if (process.platform === 'win32') {
-      execSync(`wsl tee ~/.claude/.credentials.json`, { input: credentialsJson, encoding: 'utf8', timeout: 10000 });
+      // Write to native Windows location if it exists, otherwise use WSL
+      const nativePath = path.join(os.homedir(), '.claude', '.credentials.json');
+      if (fs.existsSync(nativePath)) {
+        fs.writeFileSync(nativePath, credentialsJson, 'utf8');
+      } else {
+        execSync(`wsl tee ~/.claude/.credentials.json`, { input: credentialsJson, encoding: 'utf8', timeout: 10000 });
+      }
     } else {
       const credentialsPath = path.join(os.homedir(), '.claude', '.credentials.json');
       fs.writeFileSync(credentialsPath, credentialsJson, 'utf8');
