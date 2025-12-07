@@ -302,9 +302,9 @@ function startServer() {
       const authUrl = `http://localhost:${port}/auth/login`;
       Logger.info(`  → Visit ${authUrl} to authenticate`);
 
-      // Auto-open browser if configured
+      // Auto-open browser if configured (only works when running natively)
       const autoOpenBrowser = config.auto_open_browser !== 'false';
-      if (!isAuthenticated && autoOpenBrowser) {
+      if (!isAuthenticated && autoOpenBrowser && !isRunningInDocker()) {
         Logger.info('  → Opening browser for authentication...');
         setTimeout(() => openBrowser(authUrl), 1000);
       }
