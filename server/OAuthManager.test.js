@@ -27,9 +27,6 @@ describe('OAuthManager', () => {
     if (fs.existsSync(testDir)) {
       fs.rmSync(testDir, { recursive: true, force: true });
     }
-
-    // Set redirect URI for tests
-    OAuthManager.setRedirectURI('http://localhost:42069/auth/callback');
   });
 
   afterEach(() => {
@@ -95,7 +92,7 @@ describe('OAuthManager', () => {
       expect(url).toContain('code_challenge_method=S256');
       expect(url).toContain('state=test-state');
       expect(url).toContain('scope=org%3Acreate_api_key+user%3Aprofile+user%3Ainference');
-      expect(url).toContain('redirect_uri=http%3A%2F%2Flocalhost%3A42069%2Fauth%2Fcallback');
+      expect(url).toContain('redirect_uri=https%3A%2F%2Fconsole.anthropic.com%2Foauth%2Fcode%2Fcallback');
     });
   });
 
@@ -252,7 +249,7 @@ describe('OAuthManager', () => {
           state: 'test-state',
           client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
           code_verifier: 'test-code-verifier',
-          redirect_uri: 'http://localhost:42069/auth/callback'
+          redirect_uri: 'https://console.anthropic.com/oauth/code/callback'
         })
         .reply(200, mockResponse);
 
@@ -408,14 +405,4 @@ describe('OAuthManager', () => {
     });
   });
 
-  describe('setRedirectURI', () => {
-    it('should set redirect URI', () => {
-      OAuthManager.setRedirectURI('http://example.com/callback');
-
-      const pkce = OAuthManager.generatePKCE();
-      const url = OAuthManager.buildAuthorizationURL(pkce);
-
-      expect(url).toContain('redirect_uri=http%3A%2F%2Fexample.com%2Fcallback');
-    });
-  });
 });

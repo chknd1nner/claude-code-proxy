@@ -8,7 +8,7 @@ const OAUTH_CONFIG = {
   client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
   authorize_url: 'https://claude.ai/oauth/authorize',
   token_url: 'https://console.anthropic.com/v1/oauth/token',
-  redirect_uri_manual: 'https://console.anthropic.com/oauth/code/callback', // Anthropic's callback page (shows code to user)
+  redirect_uri: 'https://console.anthropic.com/oauth/code/callback', // Anthropic's callback page (shows code to user)
   scope: 'org:create_api_key user:profile user:inference'
 };
 
@@ -21,28 +21,6 @@ class OAuthManager {
     );
     this.cachedToken = null;
     this.refreshPromise = null;
-    this.redirectUri = OAUTH_CONFIG.redirect_uri_manual; // Default to manual flow
-  }
-
-  /**
-   * Set the redirect URI for OAuth flow
-   * @param {string} uri - The redirect URI (use 'manual' for Anthropic's callback page)
-   */
-  setRedirectURI(uri) {
-    if (uri === 'manual') {
-      this.redirectUri = OAUTH_CONFIG.redirect_uri_manual;
-    } else {
-      this.redirectUri = uri;
-    }
-    Logger.debug(`OAuth redirect URI set to: ${this.redirectUri}`);
-  }
-
-  /**
-   * Get the current redirect URI
-   * @returns {string} The current redirect URI
-   */
-  getRedirectURI() {
-    return this.redirectUri;
   }
 
   /**
@@ -75,7 +53,7 @@ class OAuthManager {
       code: 'true', // Required: tells Anthropic to display the authorization code
       client_id: OAUTH_CONFIG.client_id,
       response_type: 'code',
-      redirect_uri: this.redirectUri,
+      redirect_uri: OAUTH_CONFIG.redirect_uri,
       scope: OAUTH_CONFIG.scope,
       code_challenge: pkce.code_challenge,
       code_challenge_method: 'S256',
@@ -99,7 +77,7 @@ class OAuthManager {
       state: state,
       client_id: OAUTH_CONFIG.client_id,
       code_verifier: code_verifier,
-      redirect_uri: this.redirectUri
+      redirect_uri: OAUTH_CONFIG.redirect_uri
     });
 
     try {

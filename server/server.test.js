@@ -66,9 +66,6 @@ describe('OAuth Routes Integration Tests', () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     }
 
-    // Set redirect URI for tests
-    OAuthManager.setRedirectURI('http://localhost:42069/auth/callback');
-
     // Initialize PKCE states map
     pkceStates = new Map();
 

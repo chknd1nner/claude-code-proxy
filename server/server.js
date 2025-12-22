@@ -131,30 +131,7 @@ async function handleRequest(req, res) {
 
   // OAuth Routes
   if (pathname === '/auth/login' && req.method === 'GET') {
-    // Check if using auto flow - redirect directly to OAuth
-    const isAutoFlow = OAuthManager.getRedirectURI().includes('localhost');
-
-    if (isAutoFlow) {
-      try {
-        const pkce = OAuthManager.generatePKCE();
-        pkceStates.set(pkce.state, {
-          code_verifier: pkce.code_verifier,
-          created_at: Date.now()
-        });
-
-        const authUrl = OAuthManager.buildAuthorizationURL(pkce);
-        res.writeHead(302, { 'Location': authUrl });
-        res.end();
-        Logger.info('Redirecting to OAuth authorization (auto flow)');
-      } catch (error) {
-        Logger.error('OAuth login redirect error:', error.message);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Failed to initiate OAuth login');
-      }
-    } else {
-      // Manual flow - serve the login page
-      serveStaticFile(res, 'login.html', 'text/html');
-    }
+    serveStaticFile(res, 'login.html', 'text/html');
     return;
   }
 
@@ -167,10 +144,9 @@ async function handleRequest(req, res) {
       });
 
       const authUrl = OAuthManager.buildAuthorizationURL(pkce);
-      const isAutoFlow = OAuthManager.getRedirectURI().includes('localhost');
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ url: authUrl, state: pkce.state, flow: isAutoFlow ? 'auto' : 'manual' }));
+      res.end(JSON.stringify({ url: authUrl, state: pkce.state }));
       Logger.info('Generated OAuth authorization URL');
     } catch (error) {
       Logger.error('OAuth get-url error:', error.message);
@@ -309,16 +285,6 @@ function startServer() {
 
   // Smart host binding: auto-detect Docker or use config
   const host = config.host || (isRunningInDocker() ? '0.0.0.0' : '127.0.0.1');
-
-  // Configure OAuth flow based on config
-  const oauthFlow = config.oauth_flow || 'auto';
-  if (oauthFlow === 'auto') {
-    OAuthManager.setRedirectURI(`http://localhost:${port}/auth/callback`);
-    Logger.info(`OAuth flow: auto (localhost callback)`);
-  } else {
-    OAuthManager.setRedirectURI('manual');
-    Logger.info(`OAuth flow: manual (copy-paste code entry)`);
-  }
 
   server.listen(port, host, () => {
     Logger.info(`claude-code-proxy server listening on ${host}:${port}`);
