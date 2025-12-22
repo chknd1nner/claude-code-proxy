@@ -8,3 +8,4 @@ filter_sampling_params=true  # Set to true to ensure only one sampling parameter
 # OAuth Settings
 auto_open_browser=false  # Disabled for Docker - browser auto-open doesn't work from containers
 fallback_to_claude_code=true  # Use Claude Code credentials as fallback
+oauth_flow=auto  # 'auto' = localhost callback (seamless), 'manual' = copy-paste code entry

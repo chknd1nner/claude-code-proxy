@@ -249,13 +249,14 @@ describe('OAuthManager', () => {
         .post('/v1/oauth/token', {
           grant_type: 'authorization_code',
           code: 'test-auth-code',
+          state: 'test-state',
           client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
           code_verifier: 'test-code-verifier',
           redirect_uri: 'http://localhost:42069/auth/callback'
         })
         .reply(200, mockResponse);
 
-      const tokens = await OAuthManager.exchangeCodeForTokens('test-auth-code', 'test-code-verifier');
+      const tokens = await OAuthManager.exchangeCodeForTokens('test-auth-code', 'test-code-verifier', 'test-state');
 
       expect(tokens).toEqual(mockResponse);
     });
@@ -266,7 +267,7 @@ describe('OAuthManager', () => {
         .reply(400, { error: 'invalid_grant' });
 
       await expect(
-        OAuthManager.exchangeCodeForTokens('invalid-code', 'test-verifier')
+        OAuthManager.exchangeCodeForTokens('invalid-code', 'test-verifier', 'test-state')
       ).rejects.toThrow();
     });
   });
