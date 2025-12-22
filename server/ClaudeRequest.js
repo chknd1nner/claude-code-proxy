@@ -38,7 +38,7 @@ const loadConfig = () => {
 
 const CONFIG = loadConfig();
 const FILTER_SAMPLING_PARAMS = CONFIG.filter_sampling_params === true; // Default to false
-const FALLBACK_TO_CLAUDE_CODE = CONFIG.fallback_to_claude_code !== 'false'; // Default to true
+const FALLBACK_TO_CLAUDE_CODE = CONFIG.fallback_to_claude_code !== false; // Default to true
 
 class ClaudeRequest {
   static cachedToken = null;
