@@ -342,7 +342,7 @@ class ClaudeRequest {
       if (Array.isArray(body.system)) {
         body.system.unshift(systemPrompt);
       } else {
-        body.system = [systemPrompt, body.system];
+        body.system = [systemPrompt, {type: 'text', text: body.system}];
       }
     } else {
       body.system = [systemPrompt];
@@ -350,6 +350,10 @@ class ClaudeRequest {
 
     if (presetName) {
       this.applyPreset(body, presetName);
+    }
+
+    if (body.phi !== undefined) {
+      this.injectPHI(body);
     }
 
     body = this.stripTtlFromCacheControl(body);
@@ -407,6 +411,23 @@ class ClaudeRequest {
     }
 
     Logger.debug(`Applied preset: ${presetName}`);
+  }
+
+  injectPHI(body) {
+    const phi = body.phi;
+    delete body.phi;  // Always remove before sending to Claude API
+
+    if (phi && body.messages && body.messages.length > 0) {
+      const lastUserIndex = body.messages.map(m => m.role).lastIndexOf('user');
+      if (lastUserIndex !== -1) {
+        const phiMsg = {
+          role: 'user',
+          content: [{ type: 'text', text: phi }]
+        };
+        body.messages.splice(lastUserIndex + 1, 0, phiMsg);
+        Logger.debug('Injected PHI message');
+      }
+    }
   }
 
   async makeRequest(body, presetName = null) {
