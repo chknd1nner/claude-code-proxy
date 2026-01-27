@@ -352,7 +352,7 @@ class ClaudeRequest {
       this.applyPreset(body, presetName);
     }
 
-    if (body.phi !== undefined) {
+    if (body.phi !== undefined || body.PHI !== undefined) {
       this.injectPHI(body);
     }
 
@@ -414,8 +414,9 @@ class ClaudeRequest {
   }
 
   injectPHI(body) {
-    const phi = body.phi;
+    const phi = body.phi || body.PHI;
     delete body.phi;  // Always remove before sending to Claude API
+    delete body.PHI;
 
     if (phi && body.messages && body.messages.length > 0) {
       const lastUserIndex = body.messages.map(m => m.role).lastIndexOf('user');
