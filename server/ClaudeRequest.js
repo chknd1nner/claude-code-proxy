@@ -88,6 +88,12 @@ class ClaudeRequest {
   }
 
   loadCredentialsFromFile() {
+    // Cloud deployment: check environment variable first
+    if (process.env.CLAUDE_CREDENTIALS) {
+      Logger.debug('Loading credentials from CLAUDE_CREDENTIALS env var');
+      return process.env.CLAUDE_CREDENTIALS;
+    }
+
     if (process.platform === 'win32') {
       return execSync('wsl cat ~/.claude/.credentials.json', { encoding: 'utf8', timeout: 10000 });
     } else {
@@ -97,6 +103,14 @@ class ClaudeRequest {
   }
 
   writeCredentialsToFile(credentialsJson) {
+    // Cloud deployment: can't write back to env var, token stays in memory
+    if (process.env.CLAUDE_CREDENTIALS) {
+      Logger.debug('Cloud mode: refreshed credentials cached in memory only');
+      // Update the env var in memory so subsequent reads get the new value
+      process.env.CLAUDE_CREDENTIALS = credentialsJson;
+      return;
+    }
+
     if (process.platform === 'win32') {
       execSync(`wsl tee ~/.claude/.credentials.json`, { input: credentialsJson, encoding: 'utf8', timeout: 10000 });
     } else {

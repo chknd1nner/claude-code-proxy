@@ -1,3 +1,7 @@
 port=42069
 host=0.0.0.0
 log_level=INFO  # TRACE, DEBUG, INFO, WARN, ERROR
+
+# Cloud deployment auth (optional - leave empty for local dev)
+# Set via PROXY_SECRET env var in cloud, or uncomment below for local testing
+# proxy_secret=your-secret-here

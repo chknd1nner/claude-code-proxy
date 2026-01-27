@@ -63,14 +63,26 @@ async function handleRequest(req, res) {
   
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Proxy-Secret');
   
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
     return;
   }
-  
+
+  // Secret header auth for cloud deployment
+  const proxySecret = process.env.PROXY_SECRET || config.proxy_secret;
+  if (proxySecret) {
+    const providedSecret = req.headers['x-proxy-secret'];
+    if (providedSecret !== proxySecret) {
+      Logger.warn(`Unauthorized request from ${clientIP} - invalid or missing x-proxy-secret`);
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+  }
+
   if (pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', server: 'claude-code-proxy', timestamp: Date.now() }));
@@ -108,8 +120,9 @@ function startServer() {
   loadConfig();
   
   const server = http.createServer(handleRequest);
-  const port = parseInt(config.port) || 3000;
-  const host = config.host || 'localhost';
+  // Env vars take precedence (for cloud deployment)
+  const port = parseInt(process.env.PORT || config.port) || 3000;
+  const host = process.env.HOST || config.host || 'localhost';
   
   server.listen(port, host, () => {
     Logger.info(`claude-code-proxy server listening on ${host}:${port}`);
