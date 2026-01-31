@@ -5,7 +5,7 @@ The only required headers are `anthropic-beta`, `anthropic-version`, and `author
 curl 'https://api.anthropic.com/v1/messages?beta=true' \
   -X POST \
   -H 'accept: application/json' \
-  -H 'anthropic-beta: claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14' \
+  -H 'anthropic-beta: claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14,web-search-2025-03-05,web-fetch-2025-09-10' \
   -H 'anthropic-dangerous-direct-browser-access: true' \
   -H 'anthropic-version: 2023-06-01' \
   -H 'authorization: Bearer sk-ant-oat01-someShit' \

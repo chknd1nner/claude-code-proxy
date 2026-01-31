@@ -48,7 +48,7 @@ class ClaudeRequest {
   constructor(req = null) {
     this.API_URL = 'https://api.anthropic.com/v1/messages';
     this.VERSION = '2023-06-01';
-    this.BETA_HEADER = 'claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14';
+    this.BETA_HEADER = 'claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14,web-search-2025-03-05,web-fetch-2025-09-10';
 
     const apiKey = req?.headers?.['x-api-key'];
     if (apiKey && apiKey.includes('sk-ant')) {
@@ -342,7 +342,7 @@ class ClaudeRequest {
       if (Array.isArray(body.system)) {
         body.system.unshift(systemPrompt);
       } else {
-        body.system = [systemPrompt, body.system];
+        body.system = [systemPrompt, {type: 'text', text: body.system}];
       }
     } else {
       body.system = [systemPrompt];
@@ -350,6 +350,10 @@ class ClaudeRequest {
 
     if (presetName) {
       this.applyPreset(body, presetName);
+    }
+
+    if (body.phi !== undefined || body.PHI !== undefined) {
+      this.injectPHI(body);
     }
 
     body = this.stripTtlFromCacheControl(body);
@@ -407,6 +411,24 @@ class ClaudeRequest {
     }
 
     Logger.debug(`Applied preset: ${presetName}`);
+  }
+
+  injectPHI(body) {
+    const phi = body.phi || body.PHI;
+    delete body.phi;  // Always remove before sending to Claude API
+    delete body.PHI;
+
+    if (phi && body.messages && body.messages.length > 0) {
+      const lastUserIndex = body.messages.map(m => m.role).lastIndexOf('user');
+      if (lastUserIndex !== -1) {
+        const phiMsg = {
+          role: 'user',
+          content: [{ type: 'text', text: phi }]
+        };
+        body.messages.splice(lastUserIndex + 1, 0, phiMsg);
+        Logger.debug('Injected PHI message');
+      }
+    }
   }
 
   async makeRequest(body, presetName = null) {
